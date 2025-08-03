@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>(･ω･｀*)ﾈｰ</title>
+  <style>
+    body { font-family: sans-serif; }
+    table { border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #aaa; padding: 6px 9px; text-align: center; }
+    .bar { height: 20px; background-color: #4be; display: inline-block;}
+  </style>
+</head>
+<body>
+<h2>いろいろ</h2>
+
+<form id="entryForm">
+  名前 <input id="name" required>
+  オプチャURL <input id="url" required>
+  参加人数 <input id="members" type="number" min="1" required>
+  <button type="submit">追加</button>
+</form>
+
+<div id="summary"></div>
+<div id="ranking"></div>
+
+<script>
+const data = []; // ex: {name:'田中',url:'https://...',members:30}
+
+function render() {
+  // 植民地（名前ごとに）集計
+  const userStats = {};
+  data.forEach(d => {
+    if (!userStats[d.name]) userStats[d.name] = { name: d.name, total: 0, max: 0, ops: [] };
+    userStats[d.name].ops.push(d);
+    userStats[d.name].total += d.members;
+    if (d.members > userStats[d.name].max) userStats[d.name].max = d.members;
+  });
+  // 平均計算
+  for (let u in userStats) userStats[u].avg = userStats[u].total / userStats[u].ops.length;
+  // 配列化&ランキング
+  const users = Object.values(userStats).sort((a,b)=>b.total-a.total);
+
+  // 合計人数ランキング表
+  document.getElementById('ranking').innerHTML =
+  `<h3>合計人ランキング</h3>
+   <table>
+      <tr>
+        <th>順位</th><th>名前</th><th>合計人数</th><th>最高人数</th><th>平均人数</th><th>グラフ</th>
+      </tr>
+      ${users.map((u,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${u.name}</td>
+          <td>${u.total}</td>
+          <td>${u.max}</td>
+          <td>${u.avg.toFixed(1)}</td>
+          <td>
+            <div class="bar" style="width:${u.total*2}px" title="${u.total}"></div>
+          </td>
+        </tr>
+      `).join("")}
+    </table>`;
+
+  // 個人ごとのオプチャ一覧も表示
+  document.getElementById('summary').innerHTML =
+  `<h3>全オプチャ一覧</h3>
+   <table>
+      <tr>
+        <th>名前</th><th>オプチャURL</th><th>人数</th>
+      </tr>
+      ${data.map(d=>`
+        <tr>
+          <td>${d.name}</td>
+          <td><a href="${d.url}" target="_blank">リンク</a></td>
+          <td>${d.members}</td>
+        </tr>
+      `).join("")}
+    </table>`;
+}
+
+document.getElementById('entryForm').onsubmit = e=>{
+  e.preventDefault();
+  const name = document.getElementById('name').value.trim();
+  const url = document.getElementById('url').value.trim();
+  const members = parseInt(document.getElementById('members').value);
+  if (name && url && members > 0) {
+    data.push({ name, url, members });
+    render();
+    // reset form
+    e.target.reset();
+  }
+};
+</script>
+</body>
+</html>
